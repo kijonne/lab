@@ -1,0 +1,30 @@
+mkdir -p ~/report
+cat > ~/report/show.sh << 'EOF'
+set -x
+# --- 3.1-3.4 самоподписанный сертификат ---
+ls -l ~/selfsigned
+openssl rsa -in ~/selfsigned/private.key -check -noout
+openssl rsa -pubin -in ~/selfsigned/public.pem -noout -text | head -1
+cat ~/selfsigned/public.pem
+openssl req -in ~/selfsigned/request.csr -noout -subject
+openssl x509 -in ~/selfsigned/selfsigned.crt -noout -subject -issuer -dates
+openssl verify -CAfile ~/selfsigned/selfsigned.crt ~/selfsigned/selfsigned.crt
+
+# --- 3.5-3.6 пользователь и каталог ---
+id ca
+ls -ld /home/ca/ca
+
+# --- 3.7-3.9 PKI ---
+ls -l /home/ca/ca/pki /home/ca/ca/pki/issued /home/ca/ca/pki/private /home/ca/ca/pki/reqs
+openssl x509 -in /home/ca/ca/pki/ca.crt -noout -subject -issuer -dates
+openssl verify -CAfile /home/ca/ca/pki/ca.crt /home/ca/ca/pki/issued/server.crt
+openssl verify -CAfile /home/ca/ca/pki/ca.crt /home/ca/ca/pki/issued/site.crt
+openssl x509 -in /home/ca/ca/pki/issued/site.crt -noout -subject -issuer -dates
+openssl x509 -in /home/ca/ca/pki/issued/site.crt -noout -text | grep -A1 Alternative
+
+# --- 3.10-3.14 асимметричное шифрование ---
+ls -l /home/group1 /home/group2
+cat /home/group1/message.txt /home/group2/message.txt
+cat /home/group1/decrypted.txt /home/group2/decrypted.txt
+EOF
+sh ~/report/show.sh 2>&1 | tee ~/report/all.txt
